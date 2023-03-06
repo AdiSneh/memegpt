@@ -1,9 +1,11 @@
 import json
+import webbrowser
 from enum import Enum
 from pathlib import Path
 from typing import Any, List, Dict
 
 import openai
+import requests
 from pydantic import BaseModel, BaseSettings
 
 
@@ -11,6 +13,8 @@ class Settings(BaseSettings):
     openai_api_key: str
     temperature: int = 1
     model: str = "gpt-3.5-turbo"
+    imgflip_username: str
+    imgflip_password: str
 
 
 class Role(str, Enum):
@@ -128,6 +132,25 @@ def get_meme_captions(meme_request: MemeRequest) -> Dict[str, str]:
     return json.loads(raw_captions)
 
 
+def get_captioned_meme_url(template_id: int, captions: List[str]) -> str:
+    captions_params = {
+        f'boxes[{i}][text]': text
+        for i, text in enumerate(captions)
+    }
+    params = {
+        "template_id": template_id,
+        'username': settings.imgflip_username,
+        'password': settings.imgflip_password,
+        **captions_params,
+    }
+    response = requests.post(
+        'https://api.imgflip.com/caption_image',
+        data=params,
+    )
+    response.raise_for_status()
+    return response.json()['data']['url']
+
+
 def main():
     scenario = input("Enter Scenario: ")
     template = get_meme_template(scenario)
@@ -136,6 +159,10 @@ def main():
     print(f"Template: {template.name}")
     for name, content in captions.items():
         print(f"{name}: {content}")
+
+    url = get_captioned_meme_url(template_id=template.id, captions=list(captions.values()))
+    print(url)
+    webbrowser.open(url)
 
 
 if __name__ == "__main__":
