@@ -1,6 +1,7 @@
 import json
 from enum import Enum
-from typing import List, Dict
+from pathlib import Path
+from typing import Any, List, Dict
 
 import openai
 from pydantic import BaseModel, BaseSettings
@@ -24,8 +25,9 @@ class Message(BaseModel):
 
 
 class Template(BaseModel):
+    id: int
     name: str
-    caption_names: List[str]
+    captions: List[str]
 
 
 class MemeRequest(BaseModel):
@@ -36,13 +38,10 @@ class MemeRequest(BaseModel):
 settings = Settings()
 
 openai.api_key = settings.openai_api_key
-
+TEMPLATES_PATH = Path(__file__).parent / 'resources' / 'templates.json'
 TEMPLATES = [
-    Template(name="distracted boyfriend", caption_names=["the boyfriend", "the ex", "the jealous girlfriend"]),
-    Template(name="they're the same picture", caption_names=["left picture", "right picture"]),
-    Template(name="drake hotline bling", caption_names=["bad", "good"]),
-    Template(name="woman yelling at cat", caption_names=["woman", "cat"]),
-    Template(name="expanding brain", caption_names=["small brain", "medium brain", "big brain"]),
+    Template.parse_obj(raw_template)
+    for raw_template in json.loads(TEMPLATES_PATH.read_text())
 ]
 
 NAME_TO_TEMPLATE = {template.name: template for template in TEMPLATES}
@@ -65,7 +64,7 @@ BASE_TEMPLATE_MESSAGES = [
             "But all I ever play is Minecraft and I'm just building houses and stuff..."
         ),
     ),
-    Message(role=Role.ASSISTANT, content="woman yelling at cat"),
+    Message(role=Role.ASSISTANT, content="Woman Yelling At Cat"),
     Message(
         role=Role.USER,
         content=(
@@ -73,7 +72,7 @@ BASE_TEMPLATE_MESSAGES = [
             "So then the good workers quit and the employers end up paying 50K extra to hire new workers."
         ),
     ),
-    Message(role=Role.ASSISTANT, content="drake hotline bling"),
+    Message(role=Role.ASSISTANT, content="Drake Hotline Bling"),
 ]
 
 BASE_CAPTIONS_MESSAGES = [
@@ -91,7 +90,7 @@ BASE_CAPTIONS_MESSAGES = [
         role=Role.USER,
         content=(
             MemeRequest(
-                template=NAME_TO_TEMPLATE["woman yelling at cat"],
+                template=NAME_TO_TEMPLATE["Woman Yelling At Cat"],
                 scenario=(
                     "My parents are always mad at me for playing video games "
                     "because they think they will make me violent. "
@@ -103,10 +102,10 @@ BASE_CAPTIONS_MESSAGES = [
     Message(
         role=Role.ASSISTANT,
         content=json.dumps(
-            dict(
-                woman="my parents screaming at me that video games cause violence",
-                cat="me building a house in Minecraft",
-            )
+            {
+                "Woman": "my parents screaming at me that video games cause violence",
+                "Confused cat": "me building a house in Minecraft",
+            }
         ),
     ),
 ]
