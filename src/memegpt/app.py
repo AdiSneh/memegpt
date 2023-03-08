@@ -49,7 +49,7 @@ TEMPLATES = [
 ]
 
 NAME_TO_TEMPLATE = {template.name: template for template in TEMPLATES}
-JOINED_TEMPLATE_NAMES = ", ".join(f"'{template}'" for template in TEMPLATES)
+JOINED_TEMPLATE_NAMES = ", ".join(f"'{template.name}'" for template in TEMPLATES)
 
 BASE_TEMPLATE_MESSAGES = [
     Message(
